@@ -12,20 +12,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PersonHandler struct {
+type BookHandler struct {
 	hr      *server.Handler
-	service *service.PersonService
+	service *service.BookService
 }
 
-func NewPersonHandler(
-	hr *server.Handler,
-	personService *service.PersonService,
-) *PersonHandler {
-	return &PersonHandler{hr: hr, service: personService}
+func NewBookHandler(handler *server.Handler, bookService *service.BookService) *BookHandler {
+	return &BookHandler{hr: handler, service: bookService}
 }
 
-func (h *PersonHandler) Route(app *gin.Engine) {
-	grp := app.Group(server.RootPerson)
+func (h *BookHandler) Route(app *gin.Engine) {
+	grp := app.Group(server.RootBook)
 	grp.POST("", h.hr.AuthAccess(), h.create)
 	grp.GET("", h.getList)
 	grp.GET("/:id", h.getByID)
@@ -33,21 +30,54 @@ func (h *PersonHandler) Route(app *gin.Engine) {
 	grp.DELETE("/:id", h.hr.AuthAccess(), h.delete)
 }
 
+// create godoc
+//
+//	@Summary Create a book
+//	@Description Create a book.
+//	@Accept json
+//	@Produce json
+//	@Security BearerAuth
+//	@Param detail body dto.bookUpdateReq true "book's detail"
+//	@Success 201 {object} dto.SuccessResponse[any]
+//	@Failure 401 {object} dto.ErrorResponse
+//	@Failure 403 {object} dto.ErrorResponse
+//	@Failure 422 {object} dto.ErrorResponse
+//	@Failure 500 {object} dto.ErrorResponse
+//	@Router /books [post]
+func (h *BookHandler) create(c *gin.Context) {
+	var req dto.BookCreateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.hr.BindingError(err)
+		return
+	}
+
+	err := h.service.Create(&req)
+	if err != nil {
+		h.hr.ErrorInternalServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.SuccessResponse[any]{
+		Success: true,
+		Message: "Data berhasil disimpan",
+	})
+}
+
 // getList godoc
 //
-//	@Summary Get a list of person
-//	@Description Get a list of person.
+//	@Summary Get a list of books
+//	@Description Get a list of books.
 //	@Produce json
-//	@Param q query string false "Person's name"
+//	@Param q query string false "book's name"
 //	@Param s query int false "Data offset"
 //	@Param l query int false "Data limit"
-//	@Success 200 {object} dto.SuccessResponse[[]dto.PersonDetailResp]
-//	@Failure 400 {object} dto.ErrorResponse
+//	@Success 200 {object} dto.SuccessResponse[[]dto.bookResp]
+//	@Failure 422 {object} dto.ErrorResponse
 //	@Failure 404 {object} dto.ErrorResponse
 //	@Failure 422 {object} dto.ErrorResponse
 //	@Failure 500 {object} dto.ErrorResponse
-//	@Router /persons [get]
-func (h *PersonHandler) getList(c *gin.Context) {
+//	@Router /books [get]
+func (h *BookHandler) getList(c *gin.Context) {
 	var req dto.Filter
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(h.hr.BindingError(err))
@@ -57,8 +87,8 @@ func (h *PersonHandler) getList(c *gin.Context) {
 	data, err := h.service.GetList(&req)
 	if err != nil {
 		switch {
-		case errors.Is(err, exception.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, h.hr.ErrorResponse(exception.ErrDataNotFound.Error()))
+		case errors.Is(err, exception.ErrDataNotFound):
+			c.JSON(http.StatusNotFound, h.hr.ErrorResponse(err.Error()))
 		default:
 			h.hr.ErrorInternalServer(c, err)
 		}
@@ -66,25 +96,25 @@ func (h *PersonHandler) getList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse[[]dto.PersonDetailResp]{
+	c.JSON(http.StatusOK, dto.SuccessResponse[[]dto.BookResp]{
 		Success: true,
-		Message: "Daftar anggota",
+		Message: "Daftar buku",
 		Data:    data,
 	})
 }
 
 // getByID godoc
 //
-//	@Summary Get a person's detail
-//	@Description Get a person's detail.
+//	@Summary Get a book's detail
+//	@Description Get a book's detail.
 //	@Produce json
-//	@Param id path int true "Person's ID"
-//	@Success 200 {object} dto.SuccessResponse[dto.PersonDetailResp]
+//	@Param id path int true "book's ID"
+//	@Success 200 {object} dto.SuccessResponse[dto.bookResp]
 //	@Failure 400 {object} dto.ErrorResponse
 //	@Failure 404 {object} dto.ErrorResponse
 //	@Failure 500 {object} dto.ErrorResponse
-//	@Router /persons/{id} [get]
-func (h *PersonHandler) getByID(c *gin.Context) {
+//	@Router /books/{id} [get]
+func (h *BookHandler) getByID(c *gin.Context) {
 	idStr := c.Param("id")
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -96,8 +126,8 @@ func (h *PersonHandler) getByID(c *gin.Context) {
 	data, err := h.service.GetByID(uint(id))
 	if err != nil {
 		switch {
-		case errors.Is(err, exception.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, h.hr.ErrorResponse(exception.ErrDataNotFound.Error()))
+		case errors.Is(err, exception.ErrDataNotFound):
+			c.JSON(http.StatusNotFound, h.hr.ErrorResponse(err.Error()))
 		default:
 			h.hr.ErrorInternalServer(c, err)
 		}
@@ -105,30 +135,31 @@ func (h *PersonHandler) getByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse[dto.PersonDetailResp]{
+	c.JSON(http.StatusOK, dto.SuccessResponse[dto.BookResp]{
 		Success: true,
-		Message: "Detail anggota",
+		Message: "Detail buku",
 		Data:    data,
 	})
 }
 
 // update godoc
 //
-//	@Summary Update a person's detail
-//	@Description Update a person's detail.
+//	@Summary Update a book's detail
+//	@Description Update a book's detail.
 //	@Accept json
 //	@Produce json
 //	@Security BearerAuth
-//	@Param id path int true "Person's ID"
-//	@Param detail body dto.PersonUpdateReq true "Person's detail"
+//	@Param id path int true "book's ID"
+//	@Param detail body dto.bookUpdateReq true "book's detail"
 //	@Success 200 {object} dto.SuccessResponse[any]
 //	@Failure 400 {object} dto.ErrorResponse
 //	@Failure 401 {object} dto.ErrorResponse
 //	@Failure 403 {object} dto.ErrorResponse
 //	@Failure 404 {object} dto.ErrorResponse
+//	@Failure 422 {object} dto.ErrorResponse
 //	@Failure 500 {object} dto.ErrorResponse
-//	@Router /persons/{id} [put]
-func (h *PersonHandler) update(c *gin.Context) {
+//	@Router /books/{id} [put]
+func (h *BookHandler) update(c *gin.Context) {
 	idStr := c.Param("id")
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -137,7 +168,7 @@ func (h *PersonHandler) update(c *gin.Context) {
 		return
 	}
 
-	var req dto.PersonUpdateReq
+	var req dto.BookUpdateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(h.hr.BindingError(err))
 		return
@@ -147,9 +178,7 @@ func (h *PersonHandler) update(c *gin.Context) {
 	err = h.service.Update(&req)
 	if err != nil {
 		switch {
-		case errors.Is(err, exception.ErrDateParsing):
-			c.JSON(http.StatusBadRequest, h.hr.ErrorResponse(err.Error()))
-		case errors.Is(err, exception.ErrUserNotFound):
+		case errors.Is(err, exception.ErrDataNotFound):
 			c.JSON(http.StatusNotFound, h.hr.ErrorResponse(err.Error()))
 		default:
 			h.hr.ErrorInternalServer(c, err)
@@ -166,19 +195,19 @@ func (h *PersonHandler) update(c *gin.Context) {
 
 // delete godoc
 //
-//	@Summary Delete a person
-//	@Description Delete a person.
+//	@Summary Delete a book
+//	@Description Delete a book.
 //	@Produce json
 //	@Security BearerAuth
-//	@Param id path int true "person's ID"
+//	@Param id path int true "book's ID"
 //	@Success 200 {object} dto.SuccessResponse[any]
 //	@Failure 400 {object} dto.ErrorResponse
 //	@Failure 401 {object} dto.ErrorResponse
 //	@Failure 403 {object} dto.ErrorResponse
 //	@Failure 404 {object} dto.ErrorResponse
 //	@Failure 500 {object} dto.ErrorResponse
-//	@Router /persons/{id} [delete]
-func (h *PersonHandler) delete(c *gin.Context) {
+//	@Router /books/{id} [delete]
+func (h *BookHandler) delete(c *gin.Context) {
 	idStr := c.Param("id")
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -196,38 +225,5 @@ func (h *PersonHandler) delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse[any]{
 		Success: true,
 		Message: "Data berhasil dihapus",
-	})
-}
-
-// create godoc
-//
-//	@Summary Create a person
-//	@Description Create a person.
-//	@Accept json
-//	@Produce json
-//	@Security BearerAuth
-//	@Param detail body dto.personUpdateReq true "person's detail"
-//	@Success 201 {object} dto.SuccessResponse[any]
-//	@Failure 401 {object} dto.ErrorResponse
-//	@Failure 403 {object} dto.ErrorResponse
-//	@Failure 422 {object} dto.ErrorResponse
-//	@Failure 500 {object} dto.ErrorResponse
-//	@Router /persons [post]
-func (h *PersonHandler) create(c *gin.Context) {
-	var req dto.PersonCreateReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.hr.BindingError(err)
-		return
-	}
-
-	err := h.service.Create(&req)
-	if err != nil {
-		h.hr.ErrorInternalServer(c, err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, dto.SuccessResponse[any]{
-		Success: true,
-		Message: "Data berhasil disimpan",
 	})
 }

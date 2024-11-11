@@ -27,6 +27,19 @@ func (s *PersonService) GetAccountProfile(accountID uint) (dto.AccountProfileRes
 	return resp, nil
 }
 
+func (s *PersonService) Create(params *dto.PersonCreateReq) error {
+	newItem := params.ToEntity()
+	return s.repo.Create(&newItem)
+}
+
+func (s *PersonService) Delete(id uint) error {
+	if id <= 0 {
+		return exception.ErrDataNotFound
+	}
+
+	return s.repo.Delete(id)
+}
+
 func (s *PersonService) GetByID(id uint) (dto.PersonDetailResp, error) {
 	var resp dto.PersonDetailResp
 

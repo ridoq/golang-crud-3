@@ -8,4 +8,10 @@ type Book struct {
 	Subtitle      *string   `gorm:"size:64;"`
 	PublisherID   uint      `gorm:"not null;"`
 	BookPublisher Publisher `gorm:"foreignKey:PublisherID;"`
+	AuthorID      uint      `gorm:"not null;"`
+	BookAuthor    Author    `gorm:"foreignKey:AuthorID;"`
+}
+
+func (Book) tableName() string {
+	return "books"
 }

@@ -78,37 +78,37 @@ func TestPublisher_Delete_Success(t *testing.T) {
 	assert.Nil(t, item)
 }
 
-func TestPublisher_GetList_Success(t *testing.T) {
-	o1 := createPublisher()
-	_ = publisherRepo.Create(&o1)
+	func TestPublisher_GetList_Success(t *testing.T) {
+		o1 := createPublisher()
+		_ = publisherRepo.Create(&o1)
 
-	o2 := createPublisher()
-	_ = publisherRepo.Create(&o2)
+		o2 := createPublisher()
+		_ = publisherRepo.Create(&o2)
 
-	w := doTest(
-		"GET",
-		server.RootPublisher,
-		nil,
-		"",
-	)
-	assert.Equal(t, 200, w.Code)
+		w := doTest(
+			"GET",
+			server.RootPublisher,
+			nil,
+			"",
+		)
+		assert.Equal(t, 200, w.Code)
 
-	body := w.Body.String()
-	assert.Contains(t, body, o1.Name)
-	assert.Contains(t, body, o2.Name)
+		body := w.Body.String()
+		assert.Contains(t, body, o1.Name)
+		assert.Contains(t, body, o2.Name)
 
-	w = doTest(
-		"GET",
-		server.RootPublisher+"?q="+o1.Name,
-		nil,
-		"",
-	)
-	assert.Equal(t, 200, w.Code)
+		w = doTest(
+			"GET",
+			server.RootPublisher+"?q="+o1.Name,
+			nil,
+			"",
+		)
+		assert.Equal(t, 200, w.Code)
 
-	body = w.Body.String()
-	assert.Contains(t, body, o1.Name)
-	assert.NotContains(t, body, o2.Name)
-}
+		body = w.Body.String()
+		assert.Contains(t, body, o1.Name)
+		assert.NotContains(t, body, o2.Name)
+	}
 
 func TestPublisher_GetDetail_Success(t *testing.T) {
 	o := createPublisher()

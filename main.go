@@ -47,6 +47,14 @@ func main() {
 		app.GET("/swagger/*any", gin.BasicAuth(gin.Accounts{
 			"foo": "bar",
 		}), ginSwagger.WrapHandler(swaggerFiles.Handler))
+		
+		// app.Static("/static", "./static")
+
+		// // Route for the root path '/'
+		// app.GET("/", func(c *gin.Context) {
+		// 	// Serve index.html when accessing the root path
+		// 	c.File("./static/index.html")
+		// })
 	}
 
 	server.Serve(app)

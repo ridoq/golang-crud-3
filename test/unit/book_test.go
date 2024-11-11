@@ -1,6 +1,7 @@
 package unit_test
 
 import (
+	"base-gin/domain"
 	"base-gin/domain/dao"
 	"base-gin/util"
 	"testing"
@@ -15,9 +16,17 @@ func TestBook_GetByID_Success(t *testing.T) {
 	}
 	_ = publisherRepo.Create(&p)
 
+	gender := domain.GenderFemale
+	a := dao.Author{
+		Fullname: util.RandomStringAlpha(8),
+		Gender: &gender,
+	}
+	_ = authorRepo.Create(&a)
+
 	b := dao.Book{
 		Title:       util.RandomStringAlpha(5) + " " + util.RandomStringAlpha(6),
 		PublisherID: p.ID,
+		AuthorID: a.ID,
 	}
 	_ = bookRepo.Create(&b)
 

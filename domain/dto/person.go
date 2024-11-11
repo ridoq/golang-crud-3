@@ -7,10 +7,11 @@ import (
 )
 
 type PersonDetailResp struct {
-	ID       int    `json:"id"`
-	Fullname string `json:"fullname"`
-	Gender   string `json:"gender"`
-	Age      int    `json:"age"`
+	ID        int    `json:"id"`
+	Fullname  string `json:"fullname"`
+	Gender    string `json:"gender"`
+	BirthDate string `json:"birth_date"`
+	Age       int    `json:"age"`
 }
 
 func (o *PersonDetailResp) FromEntity(item *dao.Person) {
@@ -26,6 +27,7 @@ func (o *PersonDetailResp) FromEntity(item *dao.Person) {
 	var age float64
 	if item.BirthDate != nil {
 		age = time.Since(*item.BirthDate).Hours() / (24 * 365)
+		o.BirthDate = item.BirthDate.Format("2006-01-02")	
 	}
 
 	o.Fullname = item.Fullname
@@ -52,4 +54,27 @@ func (o *PersonUpdateReq) GetGender() domain.TypeGender {
 
 func (o *PersonUpdateReq) GetBirthDate() (time.Time, error) {
 	return time.Parse("2006-01-02", o.BirthDateStr)
+}
+
+type PersonCreateReq struct {
+	Fullname     string     `json:"fullname" binding:"required,max=56"`
+	Gender       *string    `json:"gender" binding:"omitempty,oneof=m f"`
+	BirthDate    *time.Time `json:"-" binding:"omitempty"`
+}
+
+func (o *PersonCreateReq) ToEntity() dao.Person {
+	var item dao.Person
+	var gender domain.TypeGender
+	if item.Gender == nil {
+		gender = "-"
+	} else if *item.Gender == domain.GenderFemale {
+		gender = "wanita"
+	} else {
+		gender = "pria"
+	}
+	item.Fullname = o.Fullname
+	item.Gender = &gender
+	item.BirthDate = o.BirthDate
+
+	return item
 }

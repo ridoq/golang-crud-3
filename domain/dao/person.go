@@ -13,7 +13,7 @@ type Person struct {
 	Account   *Account           `gorm:"foreignKey:AccountID;"`
 	Fullname  string             `gorm:"size:56;not null;"`
 	Gender    *domain.TypeGender `gorm:"type:enum('f','m');"`
-	BirthDate *time.Time
+	BirthDate *time.Time         
 }
 
 func (Person) TableName() string {

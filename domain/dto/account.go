@@ -41,3 +41,21 @@ func (o *AccountProfileResp) FromPerson(person *dao.Person) {
 	o.Gender = gender
 	o.Age = int(age)
 }
+
+type AccountCreateReq struct {
+	Username string `json:"uname" binding:"required,max=16"`
+	Password string `json:"paswd" binding:"required,min=8,max=255"`
+}
+
+func (o *AccountCreateReq) ToEntity() dao.Account {
+	var item dao.Account
+	item.Username = o.Username
+	item.Password = o.Password
+	
+	return item
+}
+
+type AccountUpdateReq struct {
+	ID        uint   `json:"-"`
+	Password string `json:"paswd" binding:"required,min=8,max=255"`
+}

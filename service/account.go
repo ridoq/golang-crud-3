@@ -47,3 +47,24 @@ func (s *AccountService) Login(p dto.AccountLoginReq) (dto.AccountLoginResp, err
 
 	return resp, nil
 }
+
+func (s *AccountService) Create(params *dto.AccountCreateReq) error {
+	newItem := params.ToEntity()
+	return s.repo.Create(&newItem)
+}
+
+func (s *AccountService) Update(params *dto.AccountUpdateReq) error {
+	if params.ID <= 0 {
+		return exception.ErrDataNotFound
+	}
+
+	return s.repo.Update(params)
+}
+
+func (s *AccountService) Delete(id uint) error {
+	if id <= 0 {
+		return exception.ErrDataNotFound
+	}
+
+	return s.repo.Delete(id)
+}

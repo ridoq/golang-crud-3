@@ -29,6 +29,7 @@ func RandomNumber(length int) string {
 	return string(buffer)
 }
 
+
 func RandomString(length int) string {
 	chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := make([]byte, length)

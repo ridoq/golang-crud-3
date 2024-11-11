@@ -31,6 +31,15 @@ func (r *PersonRepository) Create(newItem *dao.Person) error {
 	return nil
 }
 
+func (r *PersonRepository) Delete(id uint) error {
+	ctx, cancelFunc := storage.NewDBContext()
+	defer cancelFunc()
+
+	tx := r.db.WithContext(ctx).Delete(&dao.Person{}, id)
+
+	return tx.Error
+}
+
 func (r *PersonRepository) GetByAccountID(accountID uint) (dao.Person, error) {
 	ctx, cancelFunc := storage.NewDBContext()
 	defer cancelFunc()
@@ -47,6 +56,20 @@ func (r *PersonRepository) GetByAccountID(accountID uint) (dao.Person, error) {
 	}
 
 	return item, nil
+}
+
+func (r *PersonRepository) GetBorrowings(id uint) ([]dao.Borrowing, error) {
+	ctx, cancelFunc := storage.NewDBContext()
+	defer cancelFunc()
+
+	var borrowings []dao.Borrowing
+	tx := r.db.WithContext(ctx).Where("person_id = ?", id).
+		Find(&borrowings)
+	if tx.Error != nil && !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+		return nil, tx.Error
+	}
+
+	return borrowings, nil
 }
 
 func (r *PersonRepository) GetByID(id uint) (*dao.Person, error) {
